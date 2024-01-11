@@ -8,11 +8,12 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"strconv"
+	"strings"
+
 	"one-api/common"
 	"one-api/common/image"
 	"one-api/model"
-	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkoukk/tiktoken-go"
@@ -317,6 +318,9 @@ func relayErrorHandler(resp *http.Response) (openAIErrorWithStatusCode *OpenAIEr
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return
+	}
+	if resp.StatusCode != http.StatusOK {
+		common.LogError(resp.Request.Context(), "错误请求:"+string(responseBody))
 	}
 	err = resp.Body.Close()
 	if err != nil {

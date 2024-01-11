@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+
 	"one-api/common"
 	"one-api/common/image"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -95,7 +96,22 @@ func requestOpenAI2Gemini(textRequest GeneralOpenAIRequest) *GeminiChatRequest {
 		}
 	}
 	shouldAddDummyModelMessage := false
+	messages := make([]Message, 0, len(textRequest.Messages))
 	for _, message := range textRequest.Messages {
+		// there's no assistant role in gemini and API shall vomit if Role is not user or model
+		if message.Role == "assistant" {
+			message.Role = "model"
+		}
+		// Converting system prompt to prompt from user for the same reason
+		if message.Role == "system" {
+			message.Role = "user"
+			shouldAddDummyModelMessage = true
+		}
+
+		messages = append(messages, message)
+	}
+
+	for i, message := range messages {
 		content := GeminiChatContent{
 			Role: message.Role,
 			Parts: []GeminiPart{
@@ -128,19 +144,16 @@ func requestOpenAI2Gemini(textRequest GeneralOpenAIRequest) *GeminiChatRequest {
 		}
 		content.Parts = parts
 
-		// there's no assistant role in gemini and API shall vomit if Role is not user or model
-		if content.Role == "assistant" {
-			content.Role = "model"
+		if content.Role == "user" {
+			if i+1 < len(messages) && messages[i+1].Role == "user" {
+				shouldAddDummyModelMessage = true
+			}
 		}
-		// Converting system prompt to prompt from user for the same reason
-		if content.Role == "system" {
-			content.Role = "user"
-			shouldAddDummyModelMessage = true
-		}
+
 		geminiRequest.Contents = append(geminiRequest.Contents, content)
 
 		// If a system message is the last message, we need to add a dummy model message to make gemini happy
-		if shouldAddDummyModelMessage {
+		if shouldAddDummyModelMessage && i < len(textRequest.Messages)-1 && content.Role == "user" {
 			geminiRequest.Contents = append(geminiRequest.Contents, GeminiChatContent{
 				Role: "model",
 				Parts: []GeminiPart{
