@@ -153,7 +153,7 @@ func requestOpenAI2Gemini(textRequest GeneralOpenAIRequest) *GeminiChatRequest {
 		geminiRequest.Contents = append(geminiRequest.Contents, content)
 
 		// If a system message is the last message, we need to add a dummy model message to make gemini happy
-		if shouldAddDummyModelMessage && i < len(textRequest.Messages)-1 && content.Role == "user" {
+		if shouldAddDummyModelMessage && i < len(textRequest.Messages)-1 {
 			geminiRequest.Contents = append(geminiRequest.Contents, GeminiChatContent{
 				Role: "model",
 				Parts: []GeminiPart{

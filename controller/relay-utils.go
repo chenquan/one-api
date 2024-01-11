@@ -320,7 +320,7 @@ func relayErrorHandler(resp *http.Response) (openAIErrorWithStatusCode *OpenAIEr
 		return
 	}
 	if resp.StatusCode != http.StatusOK {
-		common.LogError(resp.Request.Context(), "错误请求:"+string(responseBody))
+		common.LogError(resp.Request.Context(), "错误响应结果:"+string(responseBody))
 	}
 	err = resp.Body.Close()
 	if err != nil {
